@@ -4,7 +4,7 @@ DROP DATABASE IF EXISTS insurance_management;
 CREATE DATABASE insurance_management;
 USE insurance_management;
 
--- TABLE: Customers
+
 
 CREATE TABLE Customers (
     customer_id VARCHAR(10) PRIMARY KEY,
@@ -15,7 +15,7 @@ CREATE TABLE Customers (
 );
 
 
--- TABLE: Insurance_Packages
+
 
 CREATE TABLE Insurance_Packages (
     package_id VARCHAR(10) PRIMARY KEY,
@@ -95,42 +95,42 @@ INSERT INTO Claim_Processing_Log VALUES
 
 
 
--- Increase base premium 15% for packages with max_limit > 500,000,000
+-- Viết câu lệnh tăng phí bảo hiểm cơ bản thêm 15% cho các gói bảo hiểm có hạn mức chi trả trên 500.000.000 VNĐ.
 UPDATE Insurance_Packages
 SET base_premium = base_premium * 1.15
 WHERE max_limit > 500000000;
 
--- Delete logs before 2025-06-20
+--   - Viết câu lệnh xóa các nhật ký xử lý bồi thường (Claim_Processing_Log) được ghi nhận trước ngày 20/6/2025.
 DELETE FROM Claim_Processing_Log
 WHERE recorded_at < '2025-06-20';
 
 
-
--- Q1
+--phan 2
+--  - Câu 1: Liệt kê thông tin các hợp đồng có trạng thái 'Active' và có ngày kết thúc trong năm 2026.
 SELECT * FROM Policies
 WHERE status = 'Active' AND YEAR(end_date) = 2026;
 
--- Q2
+--   - Câu 2: Lấy thông tin khách hàng (Họ tên, Email) có tên chứa chữ 'Hoàng' và tham gia bảo hiểm từ năm 2025 trở lại đây.
 SELECT full_name, email FROM Customers
 WHERE full_name LIKE '%Hoang%' AND YEAR(join_date) >= 2025;
 
--- Q3
+--   - Câu 3: Hiển thị top 3 yêu cầu bồi thường (Claims) có số tiền được yêu cầu cao nhất, bỏ qua yêu cầu cao nhất (lấy từ vị trí số 2 đến số 4).
 SELECT * FROM Claims
 ORDER BY claim_amount DESC
 LIMIT 3 OFFSET 1;
 
 
+--phan 3
 
 
-
--- Q1
+--   - Câu 1: Sử dụng JOIN để hiển thị: Tên khách hàng, Tên gói bảo hiểm, Ngày bắt đầu hợp đồng và Số tiền bồi thường (nếu có).
 SELECT c.full_name, pck.package_name, p.start_date, cl.claim_amount
 FROM Policies p
 JOIN Customers c ON p.customer_id = c.customer_id
 JOIN Insurance_Packages pck ON p.package_id = pck.package_id
 LEFT JOIN Claims cl ON p.policy_id = cl.policy_id;
 
--- Q2
+--   - Câu 2: Thống kê tổng số tiền bồi thường đã chi trả ('Approved') cho từng khách hàng. Chỉ hiện những người có tổng chi trả > 50.000.000 VNĐ.
 SELECT c.full_name, SUM(cl.claim_amount) AS total_paid
 FROM Customers c
 JOIN Policies p ON c.customer_id = p.customer_id
@@ -139,16 +139,18 @@ WHERE cl.status = 'Approved'
 GROUP BY c.customer_id
 HAVING total_paid > 50000000;
 
--- Q3
+--   - Câu 3: Hiển thị top 3 yêu cầu bồi thường (Claims) có số tiền được yêu cầu cao nhất, bỏ qua yêu cầu cao nhất (lấy từ vị trí số 2 đến số 4).
 SELECT package_id, COUNT(*) AS total_customers
 FROM Policies
 GROUP BY package_id
 ORDER BY total_customers DESC
 LIMIT 1;
 
-
-
+--phan 4
+--  - Câu 1: Tạo Composite Index tên idx_policy_status_date trên bảng Policies cho hai cột: status và start_date.
 CREATE INDEX idx_policy_status_date ON Policies(status, start_date);
+
+--  - Câu 2: Tạo một View tên vw_customer_summary hiển thị: Tên khách hàng, Số lượng hợp đồng đang sở hữu, và Tổng phí bảo hiểm định kỳ họ phải trả.
 
 CREATE VIEW vw_customer_summary AS
 SELECT 
@@ -160,7 +162,7 @@ LEFT JOIN Policies p ON c.customer_id = p.customer_id
 LEFT JOIN Insurance_Packages ip ON p.package_id = ip.package_id
 GROUP BY c.customer_id;
 
-
+--phan 5 
 
 DELIMITER $$
 
@@ -186,7 +188,7 @@ END$$
 
 DELIMITER ;
 
-
+--phan 6
 
 DELIMITER $$
 
